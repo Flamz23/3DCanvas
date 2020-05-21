@@ -12,10 +12,11 @@
 
 <body onload="init()">
     <div class="container-fluid" id="scenediv">
-        <canvas onmousemove="init.mouseCoord(scene,event)" id="scene" width="1000" height="500"
-            style="border:2px solid;"></canvas>
+        <canvas id="scene" width="1000" height="500" style="border:2px solid;"></canvas>
     </div>
+    <p id="framerate"></p>
     <script src="3DCanvas.js"></script>
 </body>
+<!-- onmousemove="init.mouseCoord(scene,event)" -->
 
 </html>
