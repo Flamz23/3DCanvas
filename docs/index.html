@@ -5,14 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="3DCanvas.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
     <script src="https://code.createjs.com/1.0.0/tweenjs.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
 
 <body onload="init()">
-    <div class="container-fluid" id="scenediv">
-        <canvas id="scene" width="1000" height="500" style="border:2px solid;"></canvas>
+    <div class="container" id="scenediv">
+        <canvas id="scene" onclick="init.shoot(2)" width="1000" height="500" style="border:2px solid;"></canvas>
     </div>
     <p id="framerate"></p>
     <script src="3DCanvas.js"></script>
