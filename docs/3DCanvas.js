@@ -13,7 +13,8 @@ function init() {
     const y = 125;
     var shoot_state = {
         val: 1,
-        health: 100
+        health: 100,
+        healthbarAlpha: 1
     };
     var sensitivity = 250;
     var midcanvas = {
@@ -155,10 +156,14 @@ function init() {
         function HealthbarFill() {
             let healthLiquid = RangeConvert(shoot_state.health, 0, 100, 2, 211);
             let healthfillLiq = new createjs.Shape();
-            healthfillLiq.graphics.beginFill("#09cce2").drawRect(0, 0, healthLiquid, 10);
+            healthfillLiq.graphics.beginFill("#6d6d6d").drawRect(0, 0, healthLiquid, 10);
             healthfillLiq.x = 75;
-            healthfillLiq.y = 456
-            stage.addChild(healthfillLiq)
+            healthfillLiq.y = 456;
+
+            var life = new createjs.Text(shoot_state.health, "20px Roboto", "#000000");
+            life.y = 450;
+            life.x = 290;
+            stage.addChild(healthfillLiq, life)
         }
 
         function Pfp() {
@@ -175,20 +180,22 @@ function init() {
             var text = new createjs.Text("FPS: " + l, "20px Roboto", "#000000");
             text.y = 4;
             text.x = 4;
+            text.alpha = 0.6
             stage.addChild(text)
 
-        }
 
+        }
+        //lowHealthGrad();
+        cornerwalls();
         endpoint(midcanvasX, midcanvasY);
         leftpictureFrame(midcanvasX, midcanvasY);
-        crosshairUpdate();
-        Healthbar();
-        Pfp();
-        Fps();
-        HealthbarFill();
         persistent_hand_gun();
         moving_hand_gun();
-        cornerwalls();
+        crosshairUpdate();
+        Healthbar();
+        HealthbarFill();
+        Pfp();
+        Fps();
         stage.update()
     }
 
@@ -202,14 +209,34 @@ function init() {
             }, 45);
         } else {
             shoot_state.val = 1;
-            shoot_state.health -= 2
+            shoot_state.health -= 5
         }
     }
 
+    function lowHealthGrad(alpha) {
+        if (alpha <= 1) {
+            shoot_state.healthbarAlpha += 1
+            lowHealthGrad(shoot_state.health)
+        }
+        //         let healthfillLiqLow = new createjs.Shape();
+        //         healthfillLiqLow.graphics.beginFill("#6d6d6d").drawRect(0, 0, 40, 10);
+        //         healthfillLiqLow.x = 75;
+        //         healthfillLiqLow.y = 456;
+        //         healthfillLiqLow.alpha = alpha
+        //         stage.addChild(healthfillLiqLow);
+        //         console.log("im running");
+        //         setTimeout(() => {
+        //             lowHealthGrad(alpha + 0.1)
+        //         }, 500);
+        // }
+
+
+
+    }
+
+    lowHealthGrad(0.5)
     init.shoot = shoot()
-    // setInterval(() => {
-    //     shoot(2)
-    // }, 700)
+
 }
 
 
