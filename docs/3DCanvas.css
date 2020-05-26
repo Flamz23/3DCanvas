@@ -1,6 +1,7 @@
 canvas {
     width: 85%;
     height: auto;
+    border-radius: 5px;
     /* size: 60%; */
 }
 
@@ -13,5 +14,5 @@ canvas {
 }
 
 #b {
-    color: #ff0909;
+    color: #ff3333;
 }

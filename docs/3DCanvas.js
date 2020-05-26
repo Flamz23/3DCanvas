@@ -1,11 +1,13 @@
 
 function init() {
-
+    // create scene/stage
     const stage = new createjs.Stage("scene");
-    createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED;
+    createjs.Ticker.timingMode = createjs.Ticker.RAF_SYNCHED; //set timing mode to RAF
 
+    // initialize some global variables and objects to be used later
     const scene = document.getElementById("scene");
     var mousePosition = {
+        // mouse position updated every tick
         x: 0,
         y: 0
     }
@@ -14,23 +16,45 @@ function init() {
     var shoot_state = {
         val: 1,
         health: 100,
-        healthbarAlpha: 1
+        bullet: {
+            isShooting: false,
+            BulletHole: {
+                x: -20,
+                y: -20
+            }
+        },
+        lowHealthGradient: 0.5
+
     };
-    var sensitivity = 250;
+    var sensitivity = 250; // movement sensitivity 
     var midcanvas = {
-        x: x,
+        x: x, // determines centre canvas or where to start draw each frame
         y: y
     }
     createjs.Ticker.framerate = 60;
 
 
+    function startup() {
+        var el = document.getElementById("canvas");
+        el.addEventListener("touchstart", handleStart, false);
+        el.addEventListener("touchend", handleEnd, false);
+        el.addEventListener("touchcancel", handleCancel, false);
+        el.addEventListener("touchmove", handleMove, false);
+    }
+
+
+
+
+
+    // some copy-pasta from mdn that initiates pointer lock
     scene.requestPointerLock = scene.requestPointerLock ||
         scene.mozRequestPointerLock;
     document.exitPointerLock = document.exitPointerLock ||
         document.mozExitPointerLock;
     scene.onclick = function () {
         scene.requestPointerLock();
-        shoot(2)
+        shoot(2);
+        gunSound();
     }
 
     document.addEventListener('pointerlockchange', lockChangeAlert, false);
@@ -41,15 +65,17 @@ function init() {
             document.mozPointerLockElement === scene) {
             //console.log('The pointer is now locked');
             document.addEventListener("mousemove", updatePosition, false);
+            createjs.Ticker.addEventListener("tick", handleTick);
         } else {
             //console.log('The pointer has been unlocked');
             document.removeEventListener("mousemove", updatePosition, false);
-
+            //settings()
         }
         //resetMouseMove();
         //resetMidcanvas();
     }
 
+    // A bunch of functions that update variables or perform  actions on tick
     function updatePosition(e) {
         mousePosition.x = e.movementX;
         mousePosition.y = e.movementY;
@@ -63,6 +89,7 @@ function init() {
         midcanvas.y = y
     }
     function RangeConvert(oldInput, oldMin, oldMax, newMin, newMax) {
+        // super helpful function that converts ranges....helps avoid a lot of math
         let s1 = oldInput - oldMin;
         let s2 = newMax - newMin;
         let s3 = oldMax - oldMin;
@@ -71,6 +98,7 @@ function init() {
     }
 
 
+    // The main tick event listener
     createjs.Ticker.addEventListener("tick", handleTick);
     function handleTick() {
         midcanvas.x -= ((sensitivity / 100) * mousePosition.x);
@@ -79,11 +107,12 @@ function init() {
         stage.removeAllChildren();
         draw(midcanvas.x, midcanvas.y);
         resetMouseMove();
-        //document.getElementById("framerate").innerText = "FPS: " + Math.round(createjs.Ticker.getMeasuredFPS());
     }
 
+    // most of the objects being drawn are called from here
     function draw(midcanvasX, midcanvasY) {
 
+        // Accepts coordinates as parameters and draws a line with them..... prevents tautology
         function perspecLine(x1, y1, x2, y2) {
             var lineA = new createjs.Shape();
             lineA.graphics.setStrokeStyle(1.5).beginStroke("#000000");
@@ -93,6 +122,7 @@ function init() {
             stage.addChild(lineA);
         }
 
+        // Back 'o the room
         function endpoint(midcanvasX, midcanvasY) {
             perspecLine(midcanvasX - 250, midcanvasY - 125, midcanvasX + 250, midcanvasY - 125); // Top
             perspecLine(midcanvasX - 250, midcanvasY + 125, midcanvasX + 250, midcanvasY + 125); // bottom
@@ -100,6 +130,7 @@ function init() {
             perspecLine(midcanvasX + 250, midcanvasY - 125, midcanvasX + 250, midcanvasY + 125); // right
         }
 
+        // Draws the window / picture frame at the end of the room.... only god knows what'll happen if I change any one of these
         function leftpictureFrame(midcanvasX, midcanvasY) {
             perspecLine((70 / 100) * (midcanvasX - 300), midcanvasY - 130, (70 / 100) * (midcanvasX - 300), midcanvasY + 50); // left
             perspecLine(midcanvasX - 300, midcanvasY - 100, midcanvasX - 300, midcanvasY + 30); // right
@@ -108,6 +139,7 @@ function init() {
             stage.update();
         }
 
+        // Adds the crosshair bitmap at the centre of the screen
         function crosshairUpdate() {
             var defCrosshair = new createjs.Bitmap("Assets/Crosshairs/default-crosshair-png-1.png");
             defCrosshair.x = 500 - 50
@@ -115,6 +147,7 @@ function init() {
             stage.addChild(defCrosshair)
         }
 
+        // Healthbar outlline.... Fun fact I drew it myself in Ms Paint 3D with nothing but a mouse
         function Healthbar() {
             var defHbar = new createjs.Bitmap("Assets/Healthbar/Healthbar-outer-template-v3.png");
             defHbar.x = -15
@@ -124,6 +157,7 @@ function init() {
             stage.addChild(defHbar)
         }
 
+        // Default hangun frame
         function persistent_hand_gun() {
             if (shoot_state.val === 1) {
                 var persistent_hand = new createjs.Bitmap("Assets/Guns/Handgun/1.png");
@@ -135,6 +169,7 @@ function init() {
             }
         }
 
+        // cycles through other frames of the shoot animation
         function moving_hand_gun() {
             if (shoot_state.val >= 2) {
                 var persistent_hand = new createjs.Bitmap("Assets/Guns/Handgun/" + shoot_state.val + ".png");
@@ -146,6 +181,7 @@ function init() {
             }
         }
 
+        // Draws the four corners of the room
         function cornerwalls() {
             perspecLine(0, 0 - 70, midcanvasX - 250, midcanvasY - 125);
             perspecLine(scene.width, 0 - 70, midcanvasX + 250, midcanvasY - 125);
@@ -153,19 +189,23 @@ function init() {
             perspecLine(scene.width, scene.height + 100, midcanvasX + 250, midcanvasY + 125);
         }
 
+        // Health level indicator...yes, I know the variable names are weird
         function HealthbarFill() {
-            let healthLiquid = RangeConvert(shoot_state.health, 0, 100, 2, 211);
-            let healthfillLiq = new createjs.Shape();
-            healthfillLiq.graphics.beginFill("#6d6d6d").drawRect(0, 0, healthLiquid, 10);
-            healthfillLiq.x = 75;
-            healthfillLiq.y = 456;
+            if (shoot_state.health >= 0) {
+                let healthLiquid = RangeConvert(shoot_state.health, 0, 100, 2, 211);
+                let healthfillLiq = new createjs.Shape();
+                healthfillLiq.graphics.beginFill("#6d6d6d").drawRect(0, 0, healthLiquid, 10);
+                healthfillLiq.x = 75;
+                healthfillLiq.y = 456;
 
-            var life = new createjs.Text(shoot_state.health, "20px Roboto", "#000000");
-            life.y = 450;
-            life.x = 290;
-            stage.addChild(healthfillLiq, life)
+                var life = new createjs.Text(shoot_state.health, "20px Roboto", "#000000");
+                life.y = 450;
+                life.x = 290;
+                stage.addChild(healthfillLiq, life)
+            }
         }
 
+        // pfp = profile pic
         function Pfp() {
             let newPfp = new createjs.Bitmap("Assets/Healthbar/Pfp/HB_pfp.png");
             newPfp.x = 7.5
@@ -175,6 +215,7 @@ function init() {
             stage.addChild(newPfp)
         }
 
+        //displays the frame rate at the top of the screen
         function Fps() {
             let l = Math.round(createjs.Ticker.getMeasuredFPS())
             var text = new createjs.Text("FPS: " + l, "20px Roboto", "#000000");
@@ -182,61 +223,130 @@ function init() {
             text.x = 4;
             text.alpha = 0.6
             stage.addChild(text)
-
-
         }
-        //lowHealthGrad();
+
+        // idk what to do with this yet
+        function Bullet() {
+            var bullet = new createjs.Shape();
+            bullet.graphics.beginFill("#83837f").drawCircle(0, 0, 5);
+            bullet.x = 505;
+            bullet.y = 350;
+            stage.addChild(bullet)
+        }
+
+        function bulletHole() {
+            mcanvastobulletx = RangeConvert(shoot_state.bullet.BulletHole.x, -1500, 2500, 2000, -2000);
+            mcanvastobullety = RangeConvert(shoot_state.bullet.BulletHole.y, -1000, 1000, 1200, -800)
+            //document.getElementById("rrr").innerText = midcanvas.x + ", " + shoot_state.bullet.BulletHole.x
+            bulletHolex = (mcanvastobulletx + midcanvasX) - 3
+            bulletHoley = (mcanvastobullety + midcanvasY) + 13
+            var BulletHole = new createjs.Bitmap("Assets/Guns/BulletHole/def_Bullet_Hole.png");
+            BulletHole.x = bulletHolex
+            BulletHole.y = bulletHoley
+            BulletHole.scaleX = BulletHole.scaleY = 0.15
+            stage.addChild(BulletHole);
+        }
+
+        function drawLHG() {
+            let healthLiquid = RangeConvert(shoot_state.health, 0, 100, 2, 211);
+            lH = new createjs.Shape();
+            lH.graphics.beginFill("#ff3333").drawRect(0, 0, healthLiquid + shoot_state.bullet.LHval, 10);
+            lH.x = 75;
+            lH.y = 456;
+            lH.alpha = 0.5;
+            stage.addChild(lH)
+        }
+
+        // calls all the functions above in one fell swoop.... Theres probably a better ways to do this tho
+        document.getElementById("sss").innerText = "( " + Math.round(midcanvasX) + ", " + Math.round(midcanvasY) + " )";
+        //Bullet();
         cornerwalls();
         endpoint(midcanvasX, midcanvasY);
         leftpictureFrame(midcanvasX, midcanvasY);
+        bulletHole();
         persistent_hand_gun();
         moving_hand_gun();
         crosshairUpdate();
         Healthbar();
+        drawLHG()
         HealthbarFill();
         Pfp();
         Fps();
         stage.update()
     }
 
+    // onclick shoot
+    function shoot(k) {
+        shootA(k)
+        function shootA(frame) {
+            if (shoot_state.health >= 0) {
+                if (frame <= 5) {
+                    shoot_state.val = frame;
+                    shoot_state.bullet.isShooting = true
+                    //stage.removeChildAt(16);
+                    setTimeout(() => {
+                        shoot(frame += 1)
+                    }, 40);
+                } else {
+                    updateBulletBulletHole()
+                    setTimeout(() => { Recoil(12) }, 20)
 
-    function shoot(frame) {
-        if (frame <= 5) {
-            shoot_state.val = frame;
-            //stage.removeChildAt(16);
-            setTimeout(() => {
-                shoot(frame += 1)
-            }, 45);
-        } else {
-            shoot_state.val = 1;
-            shoot_state.health -= 5
+                    shoot_state.val = 1;
+                    shoot_state.bullet.isShooting = false
+                    //shoot_state.health -= 2
+                }
+            }
+        }
+        return () => {
+            gunSound()
         }
     }
 
-    function lowHealthGrad(alpha) {
-        if (alpha <= 1) {
-            shoot_state.healthbarAlpha += 1
-            lowHealthGrad(shoot_state.health)
-        }
-        //         let healthfillLiqLow = new createjs.Shape();
-        //         healthfillLiqLow.graphics.beginFill("#6d6d6d").drawRect(0, 0, 40, 10);
-        //         healthfillLiqLow.x = 75;
-        //         healthfillLiqLow.y = 456;
-        //         healthfillLiqLow.alpha = alpha
-        //         stage.addChild(healthfillLiqLow);
-        //         console.log("im running");
-        //         setTimeout(() => {
-        //             lowHealthGrad(alpha + 0.1)
-        //         }, 500);
-        // }
-
-
-
+    //updates the bullet hole location on mouse click
+    function updateBulletBulletHole() {
+        shoot_state.bullet.BulletHole.x = midcanvas.x
+        shoot_state.bullet.BulletHole.y = midcanvas.y
     }
 
-    lowHealthGrad(0.5)
-    init.shoot = shoot()
+    // simulates recoil
+    function Recoil(val) {
+        midcanvas.y += val
+    }
 
+    // sound onshoot animation call
+    var soundID = "Thunder";
+    createjs.Sound.registerSound("Assets/Guns/Handgun/1911pubg.mp3", soundID)
+    createjs.Sound.alternateExtensions = ["mp3"];
+    createjs.Sound.volume = 0.4;
+
+    function gunSound() {
+        if (shoot_state.health >= 0) {
+            createjs.Sound.play(soundID);
+        }
+    }
+
+    //restores health to maximum
+    function hick() {
+        shoot_state.health = 100
+    }
+
+    // opens the settings menu
+    function settings() {
+        let stage1 = new createjs.Stage("scene");
+        createjs.Ticker.removeEventListener("tick", handleTick);
+        //
+        var bullet = new createjs.Shape();
+        bullet.graphics.beginFill("#83837f").drawCircle(0, 0, 5);
+        bullet.x = 505;
+        bullet.y = 350;
+        stage1.addChild(bullet)
+        stage1.update();
+    }
+
+
+    // call functions out of this....WOOOOOOORRRLD
+    init.hick = hick
+    init.shoot = shoot
 }
 
 

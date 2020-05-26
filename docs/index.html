@@ -8,18 +8,22 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
     <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
     <script src="https://code.createjs.com/1.0.0/tweenjs.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+    <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
+</head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
 </head>
 
 <body onload="init()">
     <div class="container" id="scenediv">
         <canvas id="scene" onclick="init.shoot(2)" width="1000" height="500" style="border:2px solid;"></canvas>
     </div>
-    <p>
+    <button onclick="init.hick()">refill Health</button>
+    <h3 id="rrr"></h3>
+    <h3 id="sss"></h3>
+    <h2>
+        Changelog
+    </h2>
     <ol>
-        <li>
-            Changelog
-        </li>
         <li>
             Fundamentally changed stucture from redraw on pointer update to tick based control
         </li>
@@ -28,6 +32,9 @@
         </li>
         <li>
             Added shoot animation on click
+        </li>
+        <li>
+            Added sound and Recoil Fx
         </li>
         <li>
             Minor ui additions
