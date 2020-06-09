@@ -1,18 +1,18 @@
 canvas {
-    width: 85%;
-    height: auto;
-    border-radius: 5px;
-    /* size: 60%; */
+	width: 70%;
+	height: auto;
+	border-radius: 5px;
+	/* size: 60%; */
 }
 
 #scenediv {
-    padding-left: 1%;
-    padding-right: 1%;
-    padding-top: 2%;
-    text-align: center;
-    /* color: #000000; */
+	padding-left: 1%;
+	padding-right: 1%;
+	padding-top: 2%;
+	text-align: center;
+	/* color: #000000; */
 }
 
 #b {
-    color: #ff3333;
+	color: #ff4747c4;
 }

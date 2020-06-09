@@ -13,6 +13,8 @@ function init() {
     }
     const x = 500;
     const y = 125;
+    let rf_health;
+    let rf_startregen
     var shoot_state = {
         val: 1,
         health: 100,
@@ -21,7 +23,8 @@ function init() {
             BulletHole: {
                 x: -20,
                 y: -20
-            }
+            },
+            BulletHoleAlpha: 1
         },
         lowHealthGradient: 0.5
 
@@ -43,18 +46,19 @@ function init() {
     }
 
 
-
-
-
-    // some copy-pasta from mdn that initiates pointer lock
     scene.requestPointerLock = scene.requestPointerLock ||
         scene.mozRequestPointerLock;
     document.exitPointerLock = document.exitPointerLock ||
         document.mozExitPointerLock;
     scene.onclick = function () {
-        scene.requestPointerLock();
-        shoot(2);
-        gunSound();
+        if (document.pointerLockElement === scene) {
+            if (!shoot_state.bullet.isShooting) {
+                shoot(2);
+                gunSound();
+            }
+        } else {
+            scene.requestPointerLock();
+        }
     }
 
     document.addEventListener('pointerlockchange', lockChangeAlert, false);
@@ -72,10 +76,8 @@ function init() {
             //settings()
         }
         //resetMouseMove();
-        //resetMidcanvas();
     }
 
-    // A bunch of functions that update variables or perform  actions on tick
     function updatePosition(e) {
         mousePosition.x = e.movementX;
         mousePosition.y = e.movementY;
@@ -83,10 +85,6 @@ function init() {
     function resetMouseMove() {
         mousePosition.x = 0;
         mousePosition.y = 0;
-    }
-    function resetMidcanvas() {
-        midcanvas.x = x
-        midcanvas.y = y
     }
     function RangeConvert(oldInput, oldMin, oldMax, newMin, newMax) {
         // super helpful function that converts ranges....helps avoid a lot of math
@@ -96,7 +94,6 @@ function init() {
         let d1 = (s1 * s2) / s3;
         return d1 + newMin;
     }
-
 
     // The main tick event listener
     createjs.Ticker.addEventListener("tick", handleTick);
@@ -109,8 +106,9 @@ function init() {
         resetMouseMove();
     }
 
-    // most of the objects being drawn are called from here
     function draw(midcanvasX, midcanvasY) {
+        var roomWidth = 350; // width from the centerline (div 2)
+        var roomHeight = 150; // height from centerline
 
         // Accepts coordinates as parameters and draws a line with them..... prevents tautology
         function perspecLine(x1, y1, x2, y2) {
@@ -122,18 +120,17 @@ function init() {
             stage.addChild(lineA);
         }
 
-        // Back 'o the room
-        function endpoint(midcanvasX, midcanvasY) {
-            perspecLine(midcanvasX - 250, midcanvasY - 125, midcanvasX + 250, midcanvasY - 125); // Top
-            perspecLine(midcanvasX - 250, midcanvasY + 125, midcanvasX + 250, midcanvasY + 125); // bottom
-            perspecLine(midcanvasX - 250, midcanvasY - 125, midcanvasX - 250, midcanvasY + 125); // Left
-            perspecLine(midcanvasX + 250, midcanvasY - 125, midcanvasX + 250, midcanvasY + 125); // right
+        function endpoint() {
+            perspecLine(midcanvasX - roomWidth, midcanvasY - roomHeight, midcanvasX + roomWidth, midcanvasY - roomHeight); // Top
+            perspecLine(midcanvasX - roomWidth, midcanvasY + roomHeight, midcanvasX + roomWidth, midcanvasY + roomHeight); // bottom
+            perspecLine(midcanvasX - roomWidth, midcanvasY - roomHeight, midcanvasX - roomWidth, midcanvasY + roomHeight); // Left
+            perspecLine(midcanvasX + roomWidth, midcanvasY - roomHeight, midcanvasX + roomWidth, midcanvasY + roomHeight); // right
         }
 
         // Draws the window / picture frame at the end of the room.... only god knows what'll happen if I change any one of these
-        function leftpictureFrame(midcanvasX, midcanvasY) {
+        function leftpictureFrame() {
             perspecLine((70 / 100) * (midcanvasX - 300), midcanvasY - 130, (70 / 100) * (midcanvasX - 300), midcanvasY + 50); // left
-            perspecLine(midcanvasX - 300, midcanvasY - 100, midcanvasX - 300, midcanvasY + 30); // right
+            perspecLine((100 / 100) * (midcanvasX - 300), midcanvasY - 100, (100 / 100) * (midcanvasX - 300), midcanvasY + 30); // right
             perspecLine((70 / 100) * (midcanvasX - 300), midcanvasY - 130, midcanvasX - 300, midcanvasY - 100); // top
             perspecLine((70 / 100) * (midcanvasX - 300), midcanvasY + 50, midcanvasX - 300, midcanvasY + 30);  // bottom
             stage.update();
@@ -172,7 +169,7 @@ function init() {
         // cycles through other frames of the shoot animation
         function moving_hand_gun() {
             if (shoot_state.val >= 2) {
-                var persistent_hand = new createjs.Bitmap("Assets/Guns/Handgun/" + shoot_state.val + ".png");
+                let persistent_hand = new createjs.Bitmap("Assets/Guns/Handgun/" + shoot_state.val + ".png");
                 persistent_hand.x = 5
                 persistent_hand.y = -30
                 stage.addChild(persistent_hand);
@@ -183,10 +180,10 @@ function init() {
 
         // Draws the four corners of the room
         function cornerwalls() {
-            perspecLine(0, 0 - 70, midcanvasX - 250, midcanvasY - 125);
-            perspecLine(scene.width, 0 - 70, midcanvasX + 250, midcanvasY - 125);
-            perspecLine(0, scene.height + 100, midcanvasX - 250, midcanvasY + 125);
-            perspecLine(scene.width, scene.height + 100, midcanvasX + 250, midcanvasY + 125);
+            perspecLine(0, 0 - 70, midcanvasX - roomWidth, midcanvasY - roomHeight);
+            perspecLine(scene.width, 0 - 70, midcanvasX + roomWidth, midcanvasY - roomHeight);
+            perspecLine(0, scene.height + 100, midcanvasX - roomWidth, midcanvasY + roomHeight);
+            perspecLine(scene.width, scene.height + 100, midcanvasX + roomWidth, midcanvasY + roomHeight);
         }
 
         // Health level indicator...yes, I know the variable names are weird
@@ -198,7 +195,7 @@ function init() {
                 healthfillLiq.x = 75;
                 healthfillLiq.y = 456;
 
-                var life = new createjs.Text(shoot_state.health, "20px Roboto", "#000000");
+                let life = new createjs.Text(shoot_state.health, "20px Roboto", "#000000");
                 life.y = 450;
                 life.x = 290;
                 stage.addChild(healthfillLiq, life)
@@ -218,57 +215,94 @@ function init() {
         //displays the frame rate at the top of the screen
         function Fps() {
             let l = Math.round(createjs.Ticker.getMeasuredFPS())
-            var text = new createjs.Text("FPS: " + l, "20px Roboto", "#000000");
+            let text = new createjs.Text("FPS: " + l, "20px Roboto", "#000000");
             text.y = 4;
             text.x = 4;
             text.alpha = 0.6
             stage.addChild(text)
         }
 
-        // idk what to do with this yet
-        function Bullet() {
-            var bullet = new createjs.Shape();
-            bullet.graphics.beginFill("#83837f").drawCircle(0, 0, 5);
-            bullet.x = 505;
-            bullet.y = 350;
-            stage.addChild(bullet)
-        }
-
         function bulletHole() {
             mcanvastobulletx = RangeConvert(shoot_state.bullet.BulletHole.x, -1500, 2500, 2000, -2000);
             mcanvastobullety = RangeConvert(shoot_state.bullet.BulletHole.y, -1000, 1000, 1200, -800)
-            //document.getElementById("rrr").innerText = midcanvas.x + ", " + shoot_state.bullet.BulletHole.x
             bulletHolex = (mcanvastobulletx + midcanvasX) - 3
             bulletHoley = (mcanvastobullety + midcanvasY) + 13
-            var BulletHole = new createjs.Bitmap("Assets/Guns/BulletHole/def_Bullet_Hole.png");
+            let BulletHole = new createjs.Bitmap("Assets/Guns/BulletHole/def_Bullet_Hole1.png");
             BulletHole.x = bulletHolex
             BulletHole.y = bulletHoley
-            BulletHole.scaleX = BulletHole.scaleY = 0.15
+            BulletHole.alpha = shoot_state.bullet.BulletHoleAlpha
+            BulletHole.scaleX = BulletHole.scaleY = 0.2
             stage.addChild(BulletHole);
         }
 
         function drawLHG() {
-            let healthLiquid = RangeConvert(shoot_state.health, 0, 100, 2, 211);
-            lH = new createjs.Shape();
-            lH.graphics.beginFill("#ff3333").drawRect(0, 0, healthLiquid + shoot_state.bullet.LHval, 10);
-            lH.x = 75;
-            lH.y = 456;
-            lH.alpha = 0.5;
-            stage.addChild(lH)
+            if (shoot_state.health <= 50) {
+                let outerLHalpha = RangeConvert(shoot_state.health, 0, 50, 1, 0)
+                let outerLH = new createjs.Shape();
+                outerLH.graphics.beginRadialGradientFill(["#ffffff", "#ff4747c4"], [0, 1], 100, 100, 400, 100, 100, 700).drawCircle(100, 100, 700);
+                outerLH.x = 410
+                outerLH.y = 125
+                outerLH.alpha = outerLHalpha;
+                stage.addChild(outerLH)
+            }
+
         }
 
-        // calls all the functions above in one fell swoop.... Theres probably a better ways to do this tho
+        function cubeDraw(x, y, z, length, height, depth, isCube = true) {
+            /*
+                when this function is called its values are defaulted to a particular location
+                Later use RangeConvert to make position absolute
+            */
+            let xdifference = RangeConvert(z, 0, 1, 0, 350);
+            let ydifference = RangeConvert(z, 0, 1, 70, 150)
+            let cubeX = (z * midcanvasX) + x - xdifference;
+            let cubeY = (z * midcanvasY) + y - ydifference;
+            let cubeLength = cubeX + length;
+            let cubeHeight = cubeY + height;
+            let z2 = RangeConvert(depth, 0, 100, z, 1)
+
+            perspecLine(cubeX, cubeY, cubeLength, cubeY)
+            perspecLine(cubeX, cubeY, cubeX, cubeHeight)
+            perspecLine(cubeX, cubeHeight, cubeLength, cubeHeight)
+            perspecLine(cubeLength, cubeHeight, cubeLength, cubeY)
+
+            if (isCube === true) {
+                let xdifference = RangeConvert(z2, 0, 1, 0, 350);
+                let ydifference = RangeConvert(z2, 0, 1, 70, 150)
+                let cubeX2 = (z2 * midcanvasX) + x - xdifference;
+                let cubeY2 = (z2 * midcanvasY) + y - ydifference;
+                let cubeLength2 = cubeX2 + length;
+                let cubeHeight2 = cubeY2 + height;
+
+                perspecLine(cubeX2, cubeY2, cubeLength2, cubeY2)
+                perspecLine(cubeX2, cubeY2, cubeX2, cubeHeight2)
+                perspecLine(cubeX2, cubeHeight2, cubeLength2, cubeHeight2)
+                perspecLine(cubeLength2, cubeHeight2, cubeLength2, cubeY2)
+            }
+
+            return {
+                x: cubeX,
+                y: cubeY,
+                z: z,
+                length: cubeLength,
+                height: cubeHeight,
+                xdifference: xdifference,
+                ydifference: ydifference
+            }
+
+        }
+
         document.getElementById("sss").innerText = "( " + Math.round(midcanvasX) + ", " + Math.round(midcanvasY) + " )";
-        //Bullet();
+        drawLHG()
         cornerwalls();
-        endpoint(midcanvasX, midcanvasY);
-        leftpictureFrame(midcanvasX, midcanvasY);
+        endpoint();
+        //leftpictureFrame();
         bulletHole();
         persistent_hand_gun();
         moving_hand_gun();
         crosshairUpdate();
         Healthbar();
-        drawLHG()
+        cubeDraw(350, 100, 0.6, 100, 100, 50, false);
         HealthbarFill();
         Pfp();
         Fps();
@@ -277,29 +311,26 @@ function init() {
 
     // onclick shoot
     function shoot(k) {
+        //shoot_state.bullet.BulletHoleAlpha = 0.7;
+        stophealthRegen();
         shootA(k)
         function shootA(frame) {
             if (shoot_state.health >= 0) {
                 if (frame <= 5) {
                     shoot_state.val = frame;
-                    shoot_state.bullet.isShooting = true
-                    //stage.removeChildAt(16);
+                    shoot_state.bullet.isShooting = true;
                     setTimeout(() => {
-                        shoot(frame += 1)
+                        shootA(frame += 1)
                     }, 40);
                 } else {
-                    updateBulletBulletHole()
-                    setTimeout(() => { Recoil(12) }, 20)
-
+                    setTimeout(() => { Recoil(20) }, 5)
                     shoot_state.val = 1;
                     shoot_state.bullet.isShooting = false
-                    //shoot_state.health -= 2
+                    shoot_state.health -= 3
                 }
             }
         }
-        return () => {
-            gunSound()
-        }
+        gunSound()
     }
 
     //updates the bullet hole location on mouse click
@@ -321,13 +352,28 @@ function init() {
 
     function gunSound() {
         if (shoot_state.health >= 0) {
+            clearTimeout(rf_startregen);
+            rf_startregen = setTimeout(() => {
+                replenishHealth()
+            }, 3000)
+            updateBulletBulletHole()
             createjs.Sound.play(soundID);
         }
     }
 
-    //restores health to maximum
-    function hick() {
-        shoot_state.health = 100
+    function replenishHealth() {
+        if (shoot_state.health <= 99) {
+            clearTimeout(rf_health)
+            rf_health = setTimeout(() => {
+                shoot_state.health += 1
+                replenishHealth()
+            }, 700)
+        }
+    }
+
+    function stophealthRegen() {
+        clearTimeout(rf_health)
+        clearTimeout(rf_startregen)
     }
 
     // opens the settings menu
@@ -335,252 +381,12 @@ function init() {
         let stage1 = new createjs.Stage("scene");
         createjs.Ticker.removeEventListener("tick", handleTick);
         //
-        var bullet = new createjs.Shape();
-        bullet.graphics.beginFill("#83837f").drawCircle(0, 0, 5);
-        bullet.x = 505;
-        bullet.y = 350;
-        stage1.addChild(bullet)
+        var base = new createjs.Shape();
+        base.graphics.beginFill("#83837f").drawRect(0, 0, 850, 400);
+        base.x = 75;
+        base.y = 50;
+        base.alpha = 0.5
+        stage1.addChild(base)
         stage1.update();
     }
-
-
-    // call functions out of this....WOOOOOOORRRLD
-    init.hick = hick
-    init.shoot = shoot
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-
-
-var canvas = document.getElementById("scene")
-canvas.requestPointerLock = canvas.requestPointerLock ||
-    canvas.mozRequestPointerLock;
-
-canvas.requestPointerLock()
-
-if (document.pointerLockElement === canvas ||
-    document.mozPointerLockElement === canvas) {
-    console.log('The pointer lock status is now locked');
-} else {
-    console.log('The pointer lock status is now unlocked');
-}
-
-function ini() {
-    var stage = new createjs.Stage("scene");
-    createjs.Ticker.framerate = 40;
-    createjs.Ticker.addEventListener("tick", () => {
-
-    })
-
-    let scene = document.getElementById("scene")
-    let defcanvasX = scene.width / 2
-    let defcanvasY = scene.height / 2
-    let gun_frames_array = []
-    let shoot_state = false
-
-    function perspecLine(x1, y1, x2, y2) {
-        var lineA = new createjs.Shape();
-        stage.addChild(lineA);
-        lineA.graphics.setStrokeStyle(1.5).beginStroke("#000000");
-        lineA.graphics.moveTo(x1, y1);
-        lineA.graphics.lineTo(x2, y2);
-        lineA.graphics.endStroke();
-    }
-
-    function mouseCoord(scene, event) {
-        var rect = scene.getBoundingClientRect()
-        var x = 1000 - (event.clientX - rect.left);
-        var y = 500 - (event.clientY - rect.top);
-        var newX = Math.round(RangeConvert(x, 300, 1000, -1000, 1000));
-        var newY = Math.round(RangeConvert(y, 150, 500, 0, 500));
-        drawLines(newX, newY);
-        stage.update();
-    }
-
-    function drawLines(midcanvasX = defcanvasX, midcanvasY = defcanvasY) {
-        stage.removeAllChildren();
-        perspecLine(0, 0 - 70, midcanvasX - 250, midcanvasY - 125);
-        perspecLine(scene.width, 0 - 70, midcanvasX + 250, midcanvasY - 125);
-        perspecLine(0, scene.height + 100, midcanvasX - 250, midcanvasY + 125);
-        perspecLine(scene.width, scene.height + 100, midcanvasX + 250, midcanvasY + 125);
-
-        pageUpdate(midcanvasX, midcanvasY)
-        //stage.removeChildAt(14) // persistent handgun
-        stage.update();
-    }
-
-    function RangeConvert(oldInput, oldMin, oldMax, newMin, newMax) {
-        let s1 = oldInput - oldMin;
-        let s2 = newMax - newMin;
-        let s3 = oldMax - oldMin;
-        let d1 = (s1 * s2) / s3;
-        return d1 + newMin;
-    }
-
-
-    function pageUpdate(midcanvasX, midcanvasY) {
-        function endpoint(midcanvasX, midcanvasY) {
-            perspecLine(midcanvasX - 250, midcanvasY - 125, midcanvasX + 250, midcanvasY - 125); // Top
-            perspecLine(midcanvasX - 250, midcanvasY + 125, midcanvasX + 250, midcanvasY + 125); // bottom
-            perspecLine(midcanvasX - 250, midcanvasY - 125, midcanvasX - 250, midcanvasY + 125); // Left
-            perspecLine(midcanvasX + 250, midcanvasY - 125, midcanvasX + 250, midcanvasY + 125); // right
-        }
-
-        function leftpictureFrame(midcanvasX, midcanvasY) {
-            perspecLine((70 / 100) * (midcanvasX - 300), midcanvasY - 130, (70 / 100) * (midcanvasX - 300), midcanvasY + 50); // left
-            perspecLine(midcanvasX - 300, midcanvasY - 100, midcanvasX - 300, midcanvasY + 30); // right
-            perspecLine((70 / 100) * (midcanvasX - 300), midcanvasY - 130, midcanvasX - 300, midcanvasY - 100); // top
-            perspecLine((70 / 100) * (midcanvasX - 300), midcanvasY + 50, midcanvasX - 300, midcanvasY + 30);  // bottom
-            stage.update();
-        }
-
-        function crosshairUpdate() {
-            var bitmap = new createjs.Bitmap("Assets/Crosshairs/default-crosshair-png-1.png");
-            bitmap.x = 500 - 50
-            bitmap.y = 125 + 50
-            stage.addChild(bitmap)
-        }
-
-        function Healthbar() {
-            var bitmap = new createjs.Bitmap("Assets/Healthbar/Healthbar-outer-template-v2.png");
-            bitmap.x = -15
-            bitmap.y = 380
-            bitmap.scaleX = 1.3;
-            bitmap.scaleY = 1.3;
-            stage.addChild(bitmap)
-        }
-
-        function persistent_hand_gun() {
-            if (shoot_state === false) {
-                var persistent_hand = new createjs.Bitmap("Assets/Guns/Handgun/1.png");
-                persistent_hand.x = 5
-                persistent_hand.y = -30
-                stage.addChild(persistent_hand);
-            } else {
-                console.log("shoot state not set");
-            }
-        }
-        endpoint(midcanvasX, midcanvasY);
-        leftpictureFrame(midcanvasX, midcanvasY);
-        //cubeDraw(midcanvasX, midcanvasY, 600, 300, 200, 70)
-        crosshairUpdate();
-        Healthbar();
-        persistent_hand_gun();
-    }
-
-
-    setTimeout(() => { shoot() }, 7000)
-
-
-
-    function shootcall(frame) {
-        setshootstatetrue();
-        var frameLocation = "Assets/Guns/Handgun/" + frame + ".png";
-        stage.removeAllChildren()
-        var bitmap = new createjs.Bitmap(frameLocation);
-        bitmap.x = 5
-        bitmap.y = -30
-        stage.addChild(bitmap);
-        console.log("im actually getting called > " + frame);
-        stage.update();
-    }
-
-    function shoot() {
-        setshootstatetrue();
-        var tween = createjs.Tween.get(this).wait(1);
-        for (var i = 1; i < 5; i++) {
-            let frame = i;
-            tween.wait(2000).call(shootcall(frame));
-        }
-        tween.call(setshootstatefalse, null, this); // Call something when done
-    }
-
-
-    function shoot(frame) {
-        if (frame <= 5) {
-            //setshootstatetrue();
-            var frameLocation = "Assets/Guns/Handgun/" + frame + ".png";
-
-            stage.removeChildAt(16);
-            var bitmap = new createjs.Bitmap(frameLocation);
-            bitmap.x = 5
-            bitmap.y = -30
-            stage.addChild(bitmap);
-            stage.update();
-            console.log(frameLocation);
-            setTimeout(() => {
-                shoot(frame += 1)
-            }, 100);
-        } else {
-            //setshootstatefalse();
-        }
-    }
-    shoot(1);
-
-
-    function setshootstatetrue() {
-        shoot_state = true;
-        console.log("shoot state set true");
-    }
-    function setshootstatefalse() {
-        shoot_state = false;
-        console.log("shoot state set false");
-    }
-
-    function cubeDraw(midcanvasX, midcanvasY, x, y, width, height) {
-        // perspecLine(x, y, length, y);
-        // perspecLine(length, y, length, width);
-        // perspecLine(length, width, x, width);
-        // perspecLine(x, width, x, y);
-
-        //console.log(createjs.Ticker.getTicks())
-        //console.log("boo " + width);
-        //return cubeDraw(midcanvasX, midcanvasY, 600, 300, width - 1, 70)
-
-        var perspwidth = RangeConvert(midcanvasY, -2, 510, 70, 200)
-        perspecLine(x + ((20 / 100) * perspwidth), y - midcanvasY, x - perspwidth, y - midcanvasY);
-    }
-
-
-    drawLines();
-    stage.update();
-    init.mouseCoord = mouseCoord
-    //init.shoot = shoot
-}
-
-*/
-
-
-
-
