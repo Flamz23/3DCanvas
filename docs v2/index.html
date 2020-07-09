@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0 user-scalable=no">
+    <script src="https://code.createjs.com/1.0.0/createjs.min.js"></script>
+    <script src="https://code.createjs.com/1.0.0/tweenjs.min.js"></script>
+    <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/7.0.1/math.min.js"></script>
+    <script src="3dcanvas.js"></script>
+    <title>Document</title>
+</head>
+<style>
+    .outer-canvas {
+        text-align: center;
+    }
+
+    #scene {
+        text-align: center;
+        height: auto;
+        width: 85%;
+    }
+</style>
+
+<body onload="init()">
+    <div class="outer-canvas">
+        <canvas id="scene" width="1000" height="500" style="outline:1px solid;"></canvas>
+    </div>
+    <br>
+    <button id="fires">Fire !</button>
+    <p id="log1"></p>
+</body>
+
+</html>

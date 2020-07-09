@@ -37,12 +37,20 @@ function init() {
     createjs.Ticker.framerate = 60;
 
 
-    function startup() {
-        var el = document.getElementById("canvas");
-        el.addEventListener("touchstart", handleStart, false);
-        el.addEventListener("touchend", handleEnd, false);
-        el.addEventListener("touchcancel", handleCancel, false);
-        el.addEventListener("touchmove", handleMove, false);
+    (function startup() {
+        scene.addEventListener("touchstart", handleStart, false);
+        //scene.addEventListener("touchend", handleEnd, false);
+        //el.addEventListener("touchcancel", handleCancel, false);
+        scene.addEventListener("touchmove", handleMove, false);
+        console.log("tracking these hands");
+    })();
+
+    function handleStart() {
+        console.log("you touched the screen");
+    }
+
+    function handleMove(ev) {
+        console.log(ev.touches);
     }
 
 
@@ -253,13 +261,16 @@ function init() {
                 when this function is called its values are defaulted to a particular location
                 Later use RangeConvert to make position absolute
             */
+
             let xdifference = RangeConvert(z, 0, 1, 0, 350);
             let ydifference = RangeConvert(z, 0, 1, 70, 150)
-            let cubeX = (z * midcanvasX) + x - xdifference;
-            let cubeY = (z * midcanvasY) + y - ydifference;
-            let cubeLength = cubeX + length;
-            let cubeHeight = cubeY + height;
+            let perspecdiff = RangeConvert(z, 0, 1, 20, 0)
+            let cubeX = (z * midcanvasX) + x - xdifference - perspecdiff;
+            let cubeY = (z * midcanvasY) + y - ydifference - perspecdiff;
+            let cubeLength = cubeX + length + perspecdiff;
+            let cubeHeight = cubeY + height + perspecdiff;
             let z2 = RangeConvert(depth, 0, 100, z, 1)
+
 
             perspecLine(cubeX, cubeY, cubeLength, cubeY)
             perspecLine(cubeX, cubeY, cubeX, cubeHeight)
@@ -302,11 +313,13 @@ function init() {
         moving_hand_gun();
         crosshairUpdate();
         Healthbar();
-        cubeDraw(350, 100, 0.6, 100, 100, 50, false);
+        cubeDraw(0, 0, 0.5, 100, 100, 50, false);
         HealthbarFill();
         Pfp();
         Fps();
         stage.update()
+
+        draw.cubeDraw = cubeDraw
     }
 
     // onclick shoot
@@ -331,6 +344,7 @@ function init() {
             }
         }
         gunSound()
+
     }
 
     //updates the bullet hole location on mouse click
@@ -376,6 +390,17 @@ function init() {
         clearTimeout(rf_startregen)
     }
 
+    var l
+    function blue(l) {
+        if (l >= 0)
+            setTimeout(() => {
+                draw.cubeDraw(0, 0, l.toPrecision(1), 100, 100, 50, false);
+                l += parseFloat("0.01")
+                blue(l)
+            }, 500)
+    }
+
+    blue(1)
     // opens the settings menu
     function settings() {
         let stage1 = new createjs.Stage("scene");
